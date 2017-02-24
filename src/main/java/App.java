@@ -16,11 +16,13 @@ import okhttp3.OkHttpClient.Builder;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
- 
+
 public class App {
-    
+
     public static void main(String[] args) {
         NOAA n = new NOAA();
-        n.getTemperatureData();
+        HashMap<String, Weather> data = n.getPrecipData();
+        System.out.println("collisions: " + data.getCollisions());
+        data.print();
     }
 }

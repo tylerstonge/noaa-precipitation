@@ -2,6 +2,7 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.time.LocalDate;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -21,51 +22,59 @@ import okhttp3.Response;
 public class NOAA {
     public static final String KEY = "cYlTIFWOAubKxvzCcdtciMFcdZMkXCTc";
     public static final String BASE_URL = "https://www.ncdc.noaa.gov/cdo-web/api/v2/";
-    public static final String PRECIP_URL = BASE_URL + "data?datasetid=GHCND&locationid=ZIP:13126&startdate=2016-01-01&enddate=2016-12-31";
-    public static final String ZIPCODE_URL = BASE_URL + "locations?datasetid=GHCND&locationcategoryid=ZIP&sortfield=name&limit=500&startdate=2016-01-01&enddate=2016-12-31";
-    
-    public OkHttpClient client;
-    
+    public static final String PRECIP_URL = BASE_URL + "data?datasetid=GHCND&limit=1000&startdate=*STARTDATE*&enddate=*ENDDATE*";
+
+    private OkHttpClient client;
+    private String startDate;
+    private String endDate;
+
     public NOAA() {
         // Create a client with a lengthy timeout in hopes of connecting and getting data
         client = new OkHttpClient.Builder().connectTimeout(1600L, TimeUnit.SECONDS).build();
+        startDate = LocalDate.now().minusDays(1).toString();
+        endDate = LocalDate.now().plusDays(1).toString();
     }
-    
-    public ArrayList<String> getZipCodes() {
+
+    /**
+    *  Call the NOAA API and get precipitation data for 1000 random stations
+    */
+    public HashMap<String,Weather> getPrecipData() {
+        HashMap<String, Weather> result = new HashMap<String, Weather>();
+        String url = NOAA.PRECIP_URL.replace("*STARTDATE*", startDate).replace("*ENDDATE*", endDate);
         try {
-            // Make the request
-            Request req = new Request.Builder()
-                    .url(NOAA.ZIPCODE_URL)
-                    .addHeader("token", NOAA.KEY)
-                    .build();
-            Response res = client.newCall(req).execute();
-            
-            // Parse results to a JsonArray
+            Response res = makeRequest(url);
             JsonParser parser = new JsonParser();
-            JsonArray results = parser.parse(res.body().string())
-                    .getAsJsonObject().getAsJsonArray("results");
-            
-            // Loop over results and stuff into an java array
+            JsonArray results = parser.parse(res.body().string()).getAsJsonObject().getAsJsonArray("results");
+
             Iterator<JsonElement> iterator = results.iterator();
-            ArrayList<String> zipCodes = new ArrayList<String>();
             while (iterator.hasNext()) {
-                zipCodes.add(iterator.next().getAsJsonObject().get("id").getAsString());
+                JsonObject e = iterator.next().getAsJsonObject();
+                String type = e.get("datatype").getAsString();
+                String station = e.get("station").getAsString();
+                String attributes = e.get("attributes").getAsString();
+                int value = e.get("value").getAsInt();
+
+                result.put(station, new Weather(type, station, attributes, value));
             }
-            return zipCodes;
-            
+            return result;
         } catch (IOException e) {
-            e.printStackTrace();
-        } catch (JsonParseException e) {
-            e.printStackTrace();
+
+        } catch (IllegalStateException e) {
+
         }
         return null;
     }
-    
-    public HashMap<String,Integer> getTemperatureData() {
-        ArrayList<String> zipCodes = getZipCodes();
-        for (String z : zipCodes) {
-            System.out.println(z);
-        }
-        return null;
+
+    /**
+    * Make a request to the NOAA API to the proper url
+    */
+    private Response makeRequest(String url) throws IOException, IllegalStateException {
+        // Make the request
+        Request req = new Request.Builder()
+                .url(url)
+                .addHeader("token", NOAA.KEY)
+                .build();
+        Response res = client.newCall(req).execute();
+        return res;
     }
 }
