@@ -22,7 +22,7 @@ public class App {
     public static void main(String[] args) {
         NOAA n = new NOAA();
         HashMap<String, Weather> data = n.getPrecipData();
-        System.out.println("collisions: " + data.getCollisions());
+        System.out.println("Collisions: " + data.getCollisions());
         data.print();
     }
 }
