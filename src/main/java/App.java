@@ -1,28 +1,24 @@
+import javafx.application.Application;
+import javafx.scene.Scene;
+import javafx.scene.Parent;
+import javafx.stage.Stage;
+import javafx.fxml.FXMLLoader;
 
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
+public class App extends Application {
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonSyntaxException;
+    @Override
+    public void start(Stage stage) throws Exception {
+        // Load the layout
+        Parent root = FXMLLoader.load(getClass().getResource("/mainlayout.xml"));
 
-import okhttp3.OkHttpClient.Builder;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
-
-public class App {
+        // Create and show scene
+        Scene scene = new Scene(root);
+        stage.setTitle("NOAA Precipitation");
+        stage.setScene(scene);
+        stage.show();
+    }
 
     public static void main(String[] args) {
-        NOAA n = new NOAA();
-        HashMap<String, Weather> data = n.getPrecipData();
-        System.out.println("Collisions: " + data.getCollisions());
-        data.print();
+        launch(args);
     }
 }

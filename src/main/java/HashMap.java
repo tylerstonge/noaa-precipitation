@@ -1,11 +1,15 @@
+import java.util.Collection;
+import java.util.ArrayList;
+
 public class HashMap<K,V> {
 
     private final static int INITIAL_SIZE = 512;
+    private final static int REHASH_COUNT = 1;
 
     private Entry[] map = new Entry[INITIAL_SIZE];
     private int collisions = 0;
     private int stored = 0;
-    
+
     private class Entry<K,V> {
         public K key;
         public V value;
@@ -30,21 +34,34 @@ public class HashMap<K,V> {
         }
     }
 
-    public HashMap() {
-
+    // http://burtleburtle.net/bob/hash/doobs.html
+    public int hash(K key) {
+        int hash = 0;
+        for (int i = 0; i < REHASH_COUNT; i++) {
+            hash = doHash(key, hash);
+        }
+        return hash;
     }
 
-    // http://burtleburtle.net/bob/hash/doobs.html
-    public int hash(K key, int prevHash) {
+    /*
+    public int hash(K key) {
+        int h = key.hashCode();
+        h ^= (h >>> 20) ^ (h >>> 12);
+        h ^= (h >>> 7) ^ (h >>> 4);
+        return h;
+    }
+    */
+
+    public int doHash(K key, int prevHash) {
         // Get the key as byte array
         byte[] bytes = Utilities.toByteArray(key);
-        
+
         int len = bytes.length;
-        int a = 0x9e3779b9;
+        int a = 0xdeadbeef;
         int b = 0x9e3779b9;
         int c = prevHash;
         int k = 0;
-        
+
         while (len >= 12) {
             // Loop through all but the last 11 bytes of the key
             a += (bytes[0 + k] + (bytes[1 + k] << 8)) + ((bytes[2 + k] << 16) + (bytes[3 + k] << 24));
@@ -57,7 +74,7 @@ public class HashMap<K,V> {
             len -= 12;
             k += 12;
         }
-        
+
         c += bytes.length;
         switch(len) {
             case 11: c += (bytes[10 + k] << 24);
@@ -75,7 +92,7 @@ public class HashMap<K,V> {
         int[] abc = mix(a, b, c);
         return abc[2];
     }
-    
+
     public int[]  mix(int a, int b, int c) {
         a -= b; a -= c; a ^= (c >> 13);
         b -= c; b -= a; b ^= (a << 8);
@@ -84,19 +101,23 @@ public class HashMap<K,V> {
         b -= c; b -= a; b ^= (a << 16);
         c -= a; c -= b; c ^= (b >> 5);
         a -= b; a -= c; a ^= (c >> 3);
-        b -= c; b -= a; b ^= (a << 10); 
-        c -= a; c -= b; c ^= (b >> 15); 
+        b -= c; b -= a; b ^= (a << 10);
+        c -= a; c -= b; c ^= (b >> 15);
         return new int[] {a, b, c};
     }
 
+    /**
+    * Get the value associated with the key from the hashmap.
+    */
     public V get(K key) {
         // Determine the bucket index from hashcode
-        int position = Math.abs(hash(key, 0) % map.length);
+        int position = hash(key) & (map.length - 1);
 
         // Loop over the bucket until we find the desired key
         Entry<K,V> e;
         for (e = map[position]; e != null; e = e.next) {
-            if (e.getKey() == key) {
+            System.out.println("KEY: " + key);
+            if (e.getKey() == key || e.getKey().equals(key)) {
                 return e.getValue();
             }
         }
@@ -105,9 +126,33 @@ public class HashMap<K,V> {
         return null;
     }
 
+    /**
+    * Return the nth value stored in the hashmap.
+    */
+    public V getAtIndex(int index) {
+        int position = 0;
+        for (int i = 0; i < map.length; i++) {
+            if (map[i] != null) {
+                // Loop through bucket to get length;
+                Entry<K,V> e = map[i];
+                while (e != null) {
+                    // This is the nth value stored
+                    if (position == index)
+                        return e.getValue();
+                    position++;
+                    e = e.next;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+    * Store a key value pair in the hashmap.
+    */
     public void put(K key, V value) {
         // Determine the bucket index from the hashcode
-        int position = Math.abs(hash(key, 0) % map.length);
+        int position = hash(key) & (map.length - 1);
 
         // Create entry
         Entry<K, V> newEntry = new Entry(key, value);
@@ -136,9 +181,9 @@ public class HashMap<K,V> {
         // Reached the end of the bucket, so append the new entry
         stored++;
         e.next = newEntry;
-        
+
         // Check if a rehash is needed
-        if (getLoadFactor() > 0.5) {
+        if (getLoadFactor() > 0.75) {
             rehash();
         }
     }
@@ -153,7 +198,7 @@ public class HashMap<K,V> {
         // new table size is next power of 2
         Entry[] old = map.clone();
         map = new Entry[map.length * 2];
-        
+
         for (int i = 0; i < old.length; i++) {
             if (old[i] != null) {
                 // Bucket is not empty, traverse
@@ -166,26 +211,80 @@ public class HashMap<K,V> {
         }
     }
 
+    /**
+    * Returns the number of collisions that have occured so far,
+    * this is reset when rehashing.
+    */
     public int getCollisions() {
         return this.collisions;
     }
 
+    /**
+    * Return load factor, between 0 and 1.
+    */
     public double getLoadFactor() {
         return (double) stored / (double) map.length;
     }
 
-    public void print() {
+    /**
+    * Return the amount of key-value pairs.
+    */
+    public int size() {
+        int size = 0;
         for (int i = 0; i < map.length; i++) {
             if (map[i] != null) {
-                System.out.println("-- Bucket " + i + " --");
+                // Loop through bucket to get length;
+                Entry<K,V> e = map[i];
+                while (e != null) {
+                    size++;
+                    e = e.next;
+                }
+            }
+        }
+        return size;
+    }
+
+    public Collection<V> values() {
+        Collection<V> values = new ArrayList<V>();
+        for (int i = 0; i < map.length; i++) {
+            if (map[i] != null) {
+                // Loop through bucket to get length;
+                Entry<K,V> e = map[i];
+                while (e != null) {
+                    values.add(e.getValue());
+                    e = e.next;
+                }
+            }
+        }
+        return values;
+    }
+
+    /**
+    * Print statistics about this hashmap.
+    */
+    public void printStats() {
+        double averageBucket = 0.0;
+        int emptyBuckets = 0;
+        int maxBucket = 0;
+        for (int i = 0; i < map.length; i++) {
+            if (map[i] == null) {
+                emptyBuckets++;
+            } else {
+                // Loop through bucket to get length;
                 Entry<K,V> e = map[i];
                 int c = 1;
                 while (e != null) {
                     c++;
                     e = e.next;
                 }
-                System.out.println("size:" + c);
+                averageBucket += (double) c;
+
+                // Set new max size
+                if (c > maxBucket) {
+                    maxBucket = c;
+                }
             }
         }
+        System.out.println("-- HASHMAP STATS --\nCollisions: " + collisions + "\nSize: " + map.length + "\nEmpty Buckets: " + emptyBuckets + "\nMax Bucket Depth: " + maxBucket + "\nAverage Bucket Depth: " + averageBucket / (double) map.length);
     }
 }

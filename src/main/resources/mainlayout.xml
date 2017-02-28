@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import java.net.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+<GridPane fx:controller="UIController" xmlns:fx="http://javafx.com/fxml"
+    alignment="center" hgap="10" vgap="10" styleClass="root">
+    <padding><Insets top="25" right="25" bottom="10" left="25"/></padding>
+    <Text text="NOAA Precipitation"
+        id="header"
+        GridPane.columnIndex="0"
+        GridPane.rowIndex="0"
+        GridPane.columnSpan="2"/>
+    <Label text="Station ID: "
+        GridPane.columnIndex="0"
+        GridPane.rowIndex="1"/>
+    <TextField
+        fx:id="input"
+        GridPane.columnIndex="1"
+        GridPane.rowIndex="1"/>
+    <HBox spacing="10" alignment="bottom_left"
+        GridPane.columnIndex="0"
+        GridPane.rowIndex="4">
+        <Button text="Find Random"
+            onAction="#findRandomPrecipitationData"/>
+    </HBox>
+    <HBox spacing="10" alignment="bottom_right"
+        GridPane.columnIndex="1"
+        GridPane.rowIndex="4">
+        <Button text="Find Similar"
+            onAction="#findSimilarPrecipitationData"/>
+    </HBox>
+    <Text text=""
+        fx:id="entry1"
+        GridPane.columnIndex="0"
+        GridPane.rowIndex="5"
+        GridPane.columnSpan="2"
+        styleClass="entry"/>
+    <Text text=""
+        fx:id="entry2"
+        GridPane.columnIndex="0"
+        GridPane.rowIndex="6"
+        GridPane.columnSpan="2"
+        styleClass="entry"/>
+    <Text text=""
+        fx:id="entry3"
+        GridPane.columnIndex="0"
+        GridPane.rowIndex="7"
+        GridPane.columnSpan="2"
+        styleClass="entry"/>
+    <stylesheets>
+        <URL value="@Main.css" />
+    </stylesheets>
+</GridPane>

@@ -1,0 +1,10 @@
+.root {
+    display: block;
+    -fx-background-color: #CCCCCC;
+}
+
+#header {
+    -fx-text-align: center;
+    -fx-font-weight: bold;
+    -fx-font-size: 32px;
+}
