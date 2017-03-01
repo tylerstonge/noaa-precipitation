@@ -1,3 +1,13 @@
+
+/**
+* This program populates a hashmap with precipitation data from the NOAA database.
+* The data is stored with Station IDs as the keys, and a weather object containing the
+* precipitation recording and attributes about the data. Using the Station ID you can query
+* the hashmap for another Station which recorded similar levels of precipitation.
+*
+* @author Tyler St. Onge 
+*/
+
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.Parent;
